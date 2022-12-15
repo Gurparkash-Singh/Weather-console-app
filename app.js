@@ -1,5 +1,3 @@
-// No error checking done at all
-// Handle invalid addresses
 const request = require("request");
 const dotenv = require("dotenv").config();
 const yargs = require("yargs")
@@ -19,7 +17,19 @@ const address = encodeURIComponent(argv.address);
 request(
     `http://www.mapquestapi.com/geocoding/v1/address?key=${process.env.API_KEY}&location=${address}`,
     (err, res, body) => {
+        if (err)
+        {
+            console.log(err);
+            return;
+        }
         const result = JSON.parse(body);
+        const country = result.results[0].locations[0].adminArea1;
+        if (country != "US")
+        {
+            console.log("We can only handle request for US");
+            console.log("Weather for " + country + " is not yet available");
+            return;
+        }
         const lat = result.results[0].locations[0].latLng.lat;
         const lang = result.results[0].locations[0].latLng.lng;
         const url = `https://api.weather.gov/points/${lat},${lang}`;
@@ -27,9 +37,19 @@ request(
             'User-Agent': ('myweatherapp', 'singhgk.fateh@gmail.com')
         };
         request({url, headers}, (err, res, body) => {
+            if (err)
+            {
+                console.log(err);
+                return;
+            }
             const result = JSON.parse(body);
             const url = result.properties.forecastHourly;
             request({url, headers},(err, res, body) => {
+                if (err)
+                {
+                    console.log(err);
+                    return;
+                }
                 const result = JSON.parse(body);
                 const temp = result.properties.periods[0].temperature;
                 console.log(`The temperture is ${temp}ºF`);
